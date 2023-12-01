@@ -6,6 +6,9 @@ import com.j256.ormlite.table.DatabaseTable;
 @DatabaseTable(tableName = "productos")
 
 public class Producto {
+
+    @DatabaseField(columnName = "id_producto",generatedId = true)
+    private int id;
     @DatabaseField(columnName = "nombre", canBeNull = false)
     private String nombre;
     @DatabaseField(canBeNull = false)
@@ -26,6 +29,13 @@ public class Producto {
         calcularTotal();
     }
 
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 
     public String getNombre() {
         return nombre;

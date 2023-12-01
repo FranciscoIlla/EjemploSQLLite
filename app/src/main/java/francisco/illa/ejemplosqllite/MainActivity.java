@@ -12,12 +12,17 @@ import android.view.LayoutInflater;
 import android.view.View;
 
 import francisco.illa.ejemplosqllite.adapters.ProductAdapter;
+import francisco.illa.ejemplosqllite.configuraciones.Configuracion;
 import francisco.illa.ejemplosqllite.databinding.ActivityMainBinding;
+import francisco.illa.ejemplosqllite.helpers.ProductosHelper;
 import francisco.illa.ejemplosqllite.modelos.Producto;
 
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.j256.ormlite.dao.Dao;
+
+import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
@@ -29,6 +34,9 @@ public class MainActivity extends AppCompatActivity {
     private ProductAdapter adapter;
     private RecyclerView.LayoutManager layoutManager;
 
+    private ProductosHelper helper;
+    private Dao<Producto, Integer> daoProductos;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,11 +46,25 @@ public class MainActivity extends AppCompatActivity {
 
         listaProductos = new ArrayList<>();
 
+
+
         adapter = new ProductAdapter(MainActivity.this,listaProductos,R.layout.product_view_holder);
         layoutManager = new LinearLayoutManager(this);
 
         binding.contentMain.contenedor.setAdapter(adapter);
         binding.contentMain.contenedor.setLayoutManager(layoutManager);
+
+        helper = new ProductosHelper(this, Configuracion.BD_NAME,null,Configuracion.BD_VERSION);
+
+        if(helper != null){
+            try {
+                daoProductos = helper.getDaoProductos();
+                listaProductos.addAll(daoProductos.queryForAll());
+                adapter.notifyItemRangeInserted(0,listaProductos.size());
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
 
 
         binding.fab.setOnClickListener(new View.OnClickListener() {
@@ -78,6 +100,11 @@ public class MainActivity extends AppCompatActivity {
                     );
                     listaProductos.add(producto);
                     adapter.notifyItemInserted(listaProductos.size()-1);
+                    try {
+                        daoProductos.create(producto);
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
         });
