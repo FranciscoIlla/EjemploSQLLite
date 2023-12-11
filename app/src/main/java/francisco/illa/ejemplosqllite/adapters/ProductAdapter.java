@@ -13,9 +13,14 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.j256.ormlite.dao.Dao;
+
+import java.sql.SQLException;
 import java.util.List;
 
 import francisco.illa.ejemplosqllite.R;
+import francisco.illa.ejemplosqllite.configuraciones.Configuracion;
+import francisco.illa.ejemplosqllite.helpers.ProductosHelper;
 import francisco.illa.ejemplosqllite.modelos.Producto;
 
 public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductoVH> {
@@ -23,10 +28,21 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.Producto
     private List<Producto> objects;
     private int resource;
 
+    private ProductosHelper helper;
+    private Dao<Producto, Integer> daoProductos;
+
     public ProductAdapter(Context context, List<Producto> objects, int resource) {
         this.context = context;
         this.objects = objects;
         this.resource = resource;
+        helper = new ProductosHelper(context, Configuracion.BD_NAME,null,Configuracion.BD_VERSION);
+        if(helper != null){
+            try {
+                daoProductos = helper.getDaoProductos();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     @NonNull
@@ -90,12 +106,15 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.Producto
             @Override
             public void onClick(DialogInterface dialog, int which) {
                if(!txtNombre.getText().toString().isEmpty() && !txtCantidad.getText().toString().isEmpty() && !txtPrecio.getText().toString().isEmpty()){
-                   objects.set(posicion, new Producto(
-                           txtNombre.getText().toString(),
-                           Integer.parseInt(txtCantidad.getText().toString()),
-                           Float.parseFloat(txtPrecio.getText().toString())
-                   ));
+                   producto.setNombre(txtNombre.getText().toString());
+                   producto.setCantidad(Integer.parseInt(txtCantidad.getText().toString()));
+                   producto.setPrecio(Float.parseFloat(txtPrecio.getText().toString()));
                    notifyItemChanged(posicion);
+                   try {
+                       daoProductos.update(producto);
+                   } catch (SQLException e) {
+                       throw new RuntimeException(e);
+                   }
                }
 
             }
@@ -117,8 +136,14 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.Producto
         builder.setPositiveButton("SI", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                try {
+                    daoProductos.deleteById(objects.get(posicion).getId());
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
                 objects.remove(posicion);
                 notifyItemRemoved(posicion);
+
             }
         });
         return builder.create();

@@ -102,6 +102,8 @@ public class MainActivity extends AppCompatActivity {
                     adapter.notifyItemInserted(listaProductos.size()-1);
                     try {
                         daoProductos.create(producto);
+                        int id = daoProductos.extractId(producto);
+                        producto.setId(id);
                     } catch (SQLException e) {
                         throw new RuntimeException(e);
                     }
